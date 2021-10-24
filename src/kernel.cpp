@@ -1,59 +1,54 @@
-#include <stdint.h>
-#include <stddef.h>
-#include "BasicRenderer.h"
-#include "cstr.h"
-#include "efiMemory.h"
-#include "memory.h"
-#include "Bitmap.h"
-#include "paging/PageFrameAllocater.h"
-#include "paging/PageMapIndexer.h"
-#include "paging/paging.h"
-#include "paging/PageTableManager.h"
-
-
-struct BootInfo {
-	Framebuffer* framebuffer;
-	PSF1_FONT* psf1_Font;
-	EFI_MEMORY_DESCRIPTOR* mMap;
-	uint64_t mMapSize;
-	uint64_t mMapDescriptorSize;
-};
-
-extern uint64_t _KernelStart;
-extern uint64_t _KernelEnd;
+#include "kernelUtil.h"
 
 extern "C" void _start(BootInfo* bootInfo) {
-	
-    BasicRenderer newRenderer = BasicRenderer(bootInfo->framebuffer, bootInfo->psf1_Font);
+    
+    KernelInfo kernelInfo = InitializeKernel(bootInfo);
+    PageTableManager* pageTableManager = kernelInfo.pageTableManager;
+    
+    BasicRenderer 
+    GlobalRenderer = BasicRenderer(bootInfo->framebuffer, bootInfo->psf1_Font);
+//    
+// Welocome Text & RAM
+    
+    // Welcome Text
+    
+    GlobalRenderer.CursorPosition = {0, GlobalRenderer.CursorPosition.Y + 16};
+    GlobalRenderer.Colour = 0x00a6ff;
+    GlobalRenderer.Print("            Welcome to TuhnuOS!");
+    GlobalRenderer.CursorPosition = {0,  GlobalRenderer.CursorPosition.Y + 16};
+    GlobalRenderer.Print("        ---------------------------      ");
+    GlobalRenderer.CursorPosition = {0,   GlobalRenderer.CursorPosition.Y + 16};
+    GlobalRenderer.Print("Hello and thank you for choosing TuhnuOS!");
+    GlobalRenderer.CursorPosition = {0, GlobalRenderer.CursorPosition.Y + 16};
+    GlobalRenderer.Print("I hope you like it as much as I did designing this!");
+    GlobalRenderer.CursorPosition = {0, GlobalRenderer.CursorPosition.Y + 16};
+    GlobalRenderer.Print("And don't fear to send your feedback.");
+    GlobalRenderer.CursorPosition = {0, 
+    GlobalRenderer.CursorPosition.Y + 16};
+    GlobalRenderer.Print("If you spot a bug, please send your feedback!");
+    GlobalRenderer.CursorPosition = {0, GlobalRenderer.CursorPosition.Y + 128 / 2};
+    
+   
+    // RAM
 
-    uint64_t mMapEntries = bootInfo->mMapSize / bootInfo->mMapDescriptorSize;
+  //  GlobalRenderer.Colour = 0xdcff00;
+   // GlobalRenderer.Print("            RAM");
+   // GlobalRenderer.CursorPosition = {0, GlobalRenderer.CursorPosition.Y + 16};
+   // GlobalRenderer.Print("       -------------");
+   // GlobalRenderer.CursorPosition = {0,  GlobalRenderer.CursorPosition.Y + 16};
+   // GlobalRenderer.Print("Free RAM: ");
+    //GlobalRenderer.Print(to_string(GlobalAllocator.GetFreeRAM() / 1024));
+   // GlobalRenderer.Print(" KB ");
+   // GlobalRenderer.CursorPosition = {0, GlobalRenderer.CursorPosition.Y + 16};
+  //  GlobalRenderer.Print("Used RAM: ");
+  //  GlobalRenderer.Print(to_string(GlobalAllocator.GetUsedRAM() / 1024);
+  //  GlobalRenderer.Print(" KB ");
+  //  GlobalRenderer.CursorPosition = {0, GlobalRenderer.CursorPosition.Y + 16};
+   // GlobalRenderer.Print("Reserved RAM: ");
+   // GlobalRenderer.Print(to_string(GlobalAllocator.GetReservedRAM() / 1024));
+   // GlobalRenderer.Print(" KB ");
+    //GlobalRenderer.CursorPosition = {0, GlobalRenderer.CursorPosition.Y + 16};
 
-    GlobalAllocator = PageFrameAllocater();
-    GlobalAllocator.ReadEFIMemoryMap(bootInfo->mMap, bootInfo->mMapSize, bootInfo->mMapDescriptorSize);
-
-    uint64_t kernelSize = (uint64_t)&_KernelEnd - (uint64_t)&_KernelStart;
-    uint64_t kernelPages = (uint64_t)kernelSize / 4096 + 1;
-
-    GlobalAllocator.LockPages(&_KernelStart, kernelPages);
-
-    PageTable* PML4 = (PageTable*)GlobalAllocator.RequestPage();
-    memset(PML4, 0, 0x1000);
-    PageTableManager pageTableManager = PageTableManager(PML4);
-
-    for(uint64_t t = 0; t < GetMemorySize(bootInfo->mMap, mMapEntries, bootInfo->mMapDescriptorSize); t+=0x1000) {
-        pageTableManager.MapMemory((void*)t, (void*)t);
-    }
-
-    uint64_t fbBase = (uint64_t)bootInfo->framebuffer->BaseAddress;
-    uint64_t fbSize = (uint64_t)bootInfo->framebuffer->BufferSize + 0x1000;
-    for(uint64_t t = fbBase; t < fbBase + fbSize; t += 4096) {
-        pageTableManager.MapMemory((void*)t, (void*)t );
-    }
-
-    asm ("mov %0, %%cr3" : : "r" (PML4));
-
-    newRenderer.CursorPosition = {0, newRenderer.CursorPosition.Y + 16};
-    newRenderer.Print("I'm in the new Page Map!");
-
-    return;
-}   
+//
+    while(true);
+} 
