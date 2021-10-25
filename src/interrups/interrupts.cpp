@@ -1,7 +1,7 @@
 #include "interrupts.h"
 
-__attribute__((interrupt)) void PageFauld_Handler(struct interrupt_frame* frame){
-    
-    GlobalRenderer->Print("Page fauld detected");
+
+__attribute__((interrupt)) void PageFault_Handler(struct interrupt_frame* frame){
+    GlobalRenderer->Print("Page fault detected");
     while(true);
 }
